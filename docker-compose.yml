@@ -1,0 +1,53 @@
+networks:
+  backend:
+  db:
+
+services:
+  redis:
+    image: redis:7.4.7
+    ports:
+      - "6379"
+    networks:
+      db:
+
+  mongo:
+    image: mongo:4.4.14
+    restart: always
+    ports:
+      - "27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    depends_on:
+      - redis
+    networks:
+      db:
+
+  app:
+    build:
+      context: .
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    networks:
+      backend:
+      db:
+    volumes:
+      - ./src:/src
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+    networks:
+      backend:
+      db:
+    volumes:
+      - ./src:/src
